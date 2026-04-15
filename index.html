@@ -1,160 +1,291 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Sistema de Fichas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFRI PRO v4.1 🔥</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<style>
-body{
-font-family:Arial;
-background:linear-gradient(135deg,#1e1b4b,#0ea5e9);
-color:white;
-margin:0;
-}
-
-.container{
-padding:20px;
-max-width:900px;
-margin:auto;
-}
-
-.card{
-background:#1e293b;
-padding:20px;
-border-radius:12px;
-margin-bottom:20px;
-}
-
-input{
-width:100%;
-padding:12px;
-margin-top:10px;
-border-radius:10px;
-border:none;
-}
-
-button{
-width:100%;
-padding:15px;
-margin-top:10px;
-border:none;
-border-radius:12px;
-background:#22c55e;
-color:white;
-font-size:16px;
-}
-
-</style>
+    <style>
+        :root { --primary: #ff5722; --blue: #3498db; --green: #2ecc71; --dark: #2c3e50; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; }
+        .container { width: 100%; max-width: 480px; margin: auto; padding: 15px; box-sizing: border-box; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        
+        input, select, button { width: 100%; margin-top: 12px; padding: 14px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+        input:focus { border-color: var(--primary); outline: none; }
+        
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:active { transform: scale(0.96); }
+        
+        .link-text { color: var(--blue); font-size: 14px; cursor: pointer; margin-top: 15px; display: inline-block; text-decoration: underline; }
+        .bigBtn { height: 60px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1em; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-box { background: #f8f9fa; padding: 12px; border-radius: 10px; border-left: 4px solid var(--primary); text-align: left; }
+        .stat-box b { font-size: 18px; color: var(--dark); display: block; }
+        
+        .mikrotik-console { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; text-align: left; height: 180px; overflow-y: auto; font-size: 12px; }
+        
+        #loadingOverlay { display: none; margin-top: 15px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-
 <body>
 
-<div class="container">
-
-<div class="card">
-<h2>Vendedor</h2>
-<input id="vendedor" placeholder="Nombre del vendedor">
-<button onclick="guardarVendedor()">Guardar</button>
+<div id="splash" style="position:fixed;width:100%;height:100%;background:white;z-index:2000;display:flex;align-items:center;justify-content:center;">
+    <h1 style="color:var(--primary);">🔥 SAFRI PRO</h1>
 </div>
 
-<div class="card">
-<h2>Escanear QR (20 horas)</h2>
-<div id="reader"></div>
+<div class="container" id="view-login" style="display:none">
+    <div class="card">
+        <h2 id="login-title">Bienvenido</h2>
+        <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
+            <input id="login-email" type="email" name="email" placeholder="Correo" autocomplete="username" required>
+            <input id="login-pass" type="password" name="password" placeholder="Contraseña" autocomplete="current-password" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <span class="link-text" onclick="resetPassword()">¿Olvidaste tu contraseña?</span>
+        <br><span id="btn-change-user" class="link-text" style="display:none; color:#666;" onclick="clearSavedUser()">Usar otra cuenta</span>
+    </div>
 </div>
 
-<div class="card">
-<h2>Ingresar PIN manual (10 horas)</h2>
-<input id="pinManual" placeholder="Escribe el PIN">
-<button onclick="registrarManual()">Registrar PIN</button>
+<div class="container" id="view-admin" style="display:none">
+    <div class="card">
+        <h2 id="admin-name">Socio</h2>
+        <button class="bigBtn" onclick="showSection('view-scan')">📥 ESCANEAR HOJA</button>
+        <button class="bigBtn" onclick="showSection('view-add-vendedor')" style="background:var(--blue)">👥 GESTIONAR VENDEDORES</button>
+        <button class="bigBtn" onclick="showSection('view-mikrotik')" style="background:var(--green)">📟 MIKROTIK LIVE</button>
+        <button class="bigBtn" onclick="showSection('view-finanzas')" style="background:#9b59b6">💰 CORTE DE CAJA</button>
+        <button onclick="handleLogout()" style="background:#e74c3c; margin-top:20px;">Cerrar Sesión</button>
+    </div>
 </div>
 
+<div class="container" id="view-add-vendedor" style="display:none">
+    <div class="card">
+        <h3>Nuevo Vendedor</h3>
+        <p style="font-size: 12px; color: #666;">Al crear un vendedor, deberás volver a entrar con tu cuenta de Socio.</p>
+        <input id="new-vend-name" placeholder="Nombre del vendedor">
+        <input id="new-vend-email" placeholder="Correo electrónico">
+        <input id="new-vend-pass" type="password" placeholder="Contraseña">
+        <button onclick="addNewVendedor()">Crear Cuenta</button>
+        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-vendedor" style="display:none">
+    <div class="card">
+        <h2 id="vend-name">Vendedor</h2>
+        <div class="stats-grid">
+            <div class="stat-box"><small>Ventas</small><b id="v-count">0</b></div>
+            <div class="stat-box"><small>Comisión</small><b id="v-comision">$0.00</b></div>
+        </div>
+        <button class="bigBtn" onclick="showSection('view-vender-pin')">💸 VENDER PIN</button>
+        <button onclick="handleLogout()" style="background:#e74c3c; margin-top:20px;">Cerrar Sesión</button>
+    </div>
+</div>
+
+<div class="container" id="view-vender-pin" style="display:none">
+    <div class="card">
+        <h3>Registrar Venta</h3>
+        <input id="input-pin-vender" placeholder="PIN de la ficha">
+        <button onclick="confirmVenta()" style="background:var(--green)">Confirmar</button>
+        <button onclick="showSection('view-vendedor')" style="background:#777">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-scan" style="display:none">
+    <div class="card">
+        <h3>Cargar Fichas</h3>
+        <select id="scan-vendedor-select"></select>
+        <button onclick="document.getElementById('file-input').click()" style="background:var(--green)">📸 TOMAR FOTO</button>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="processOCR()">
+        <div id="loadingOverlay"><div class="spinner"></div><div id="scan-progress">Escaneando...</div></div>
+        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-finanzas" style="display:none">
+    <div class="card">
+        <h3>Corte de Caja</h3>
+        <div id="finanzas-data"></div>
+        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-mikrotik" style="display:none">
+    <div class="card">
+        <h3>Mikrotik 443</h3>
+        <div class="mikrotik-console" id="mk-data">> Esperando...</div>
+        <button onclick="fetchMikrotik()" style="background:var(--green); margin-top:10px;">🔄 ACTUALIZAR</button>
+        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
+    </div>
 </div>
 
 <script>
-
-// 🔥 FIREBASE (TU CONFIG)
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
- apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w",
- authDomain: "safriapp-2f1db.firebaseapp.com",
- projectId: "safriapp-2f1db"
+    apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w",
+    authDomain: "safriapp-2f1db.firebaseapp.com",
+    projectId: "safriapp-2f1db"
 };
-
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.firestore();
 
-// 👤 GUARDAR VENDEDOR
-function guardarVendedor(){
-  let v = document.getElementById("vendedor").value;
-  localStorage.setItem("vendedor", v);
-  alert("Vendedor guardado");
+let currentUser = null;
+
+// --- PERSISTENCIA ---
+window.onload = () => {
+    const savedEmail = localStorage.getItem('safri_user_email');
+    if (savedEmail) {
+        document.getElementById('login-email').value = savedEmail;
+        document.getElementById('btn-change-user').style.display = 'inline-block';
+    }
+};
+
+function clearSavedUser() { localStorage.removeItem('safri_user_email'); location.reload(); }
+
+function showSection(id) {
+    document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+    if(id === 'view-vendedor') updateVendedorStats();
+    if(id === 'view-finanzas') updateAdminFinanzas();
 }
 
-// 📷 ESCANEAR QR
-function onScanSuccess(decodedText) {
-
-  let vendedor = localStorage.getItem("vendedor") || "sin_nombre";
-
-  let pin = decodedText.trim();
-
-  let match = pin.match(/[a-z0-9]{5,8}/i);
-  if(!match){
-    alert("PIN no válido");
-    return;
-  }
-
-  pin = match[0];
-
-  guardarVenta(pin, vendedor);
+// --- AUTH ---
+function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    auth.signInWithEmailAndPassword(email, pass).then(() => {
+        localStorage.setItem('safri_user_email', email);
+    }).catch(err => alert("Error al entrar."));
 }
 
-// ✍️ REGISTRO MANUAL
-function registrarManual(){
-
-  let vendedor = localStorage.getItem("vendedor") || "sin_nombre";
-  let pin = document.getElementById("pinManual").value.trim();
-
-  let match = pin.match(/[a-z0-9]{5,8}/i);
-  if(!match){
-    alert("PIN no válido");
-    return;
-  }
-
-  pin = match[0];
-
-  guardarVenta(pin, vendedor);
+function resetPassword() {
+    const email = document.getElementById('login-email').value;
+    if(!email) return alert("Escribe tu correo.");
+    auth.sendPasswordResetEmail(email).then(() => alert("Correo enviado.")).catch(e => alert(e.message));
 }
 
-// 💾 GUARDAR EN FIREBASE
-function guardarVenta(pin, vendedor){
-
-  db.collection("ventas").add({
-    pin: pin,
-    vendedor: vendedor,
-    fecha: new Date()
-  });
-
-  alert("Registrado: " + pin);
-}
-
-// 🚀 INICIAR CAMARA
-const html5QrCode = new Html5Qrcode("reader");
-
-Html5Qrcode.getCameras().then(devices => {
-  if(devices.length){
-    html5QrCode.start(
-      devices[0].id,
-      { fps: 10, qrbox: 250 },
-      onScanSuccess
-    );
-  }
+auth.onAuthStateChanged(user => {
+    document.getElementById('splash').style.display = 'none';
+    if (user) {
+        db.collection("usuarios").doc(user.uid).get().then(doc => {
+            currentUser = doc.data();
+            if(currentUser.tipo === 'admin') {
+                document.getElementById('admin-name').innerText = "Socio: " + currentUser.nombre;
+                showSection('view-admin');
+                fillVendedoresDropdown();
+            } else {
+                document.getElementById('vend-name').innerText = "Vendedor: " + currentUser.nombre;
+                showSection('view-vendedor');
+            }
+        });
+    } else { showSection('view-login'); }
 });
 
-</script>
+// --- GESTIÓN VENDEDORES ---
+function addNewVendedor() {
+    const n = document.getElementById('new-vend-name').value;
+    const e = document.getElementById('new-vend-email').value;
+    const p = document.getElementById('new-vend-pass').value;
 
+    auth.createUserWithEmailAndPassword(e, p).then(res => {
+        db.collection("usuarios").doc(res.user.uid).set({ nombre: n, tipo: "vendedor" });
+        alert("Vendedor creado. El sistema se cerrará para que vuelvas a entrar como Socio.");
+        auth.signOut();
+    }).catch(err => alert(err.message));
+}
+
+// --- VENDEDOR ---
+async function confirmVenta() {
+    const pin = document.getElementById('input-pin-vender').value.trim();
+    if(!pin) return;
+    const snap = await db.collection("fichas").where("pin", "==", pin).get();
+    if(snap.empty) return alert("No existe.");
+    const ficha = snap.docs[0];
+    if(ficha.data().estado === "vendida") return alert("Ya vendida.");
+
+    await ficha.ref.update({ estado: "vendida", fechaVenta: new Date() });
+    await db.collection("ventas").add({
+        pin: pin, vendedor: currentUser.nombre, precio: ficha.data().precio, fecha: new Date()
+    });
+    alert("Vendido 🔥");
+    document.getElementById('input-pin-vender').value = "";
+    updateVendedorStats();
+}
+
+function updateVendedorStats() {
+    db.collection("ventas").where("vendedor", "==", currentUser.nombre).get().then(snap => {
+        let total = 0;
+        snap.forEach(d => total += d.data().precio);
+        document.getElementById('v-count').innerText = snap.size;
+        document.getElementById('v-comision').innerText = "$" + (total * 0.15).toFixed(2);
+    });
+}
+
+// --- SOCIO TOOLS ---
+async function processOCR() {
+    const file = document.getElementById('file-input').files[0];
+    const v = document.getElementById('scan-vendedor-select').value;
+    document.getElementById('loadingOverlay').style.display = 'block';
+    try {
+        const worker = await Tesseract.createWorker();
+        await worker.loadLanguage('eng'); await worker.initialize('eng');
+        const { data: { text } } = await worker.recognize(file);
+        await worker.terminate();
+        const pinRegex = /PIN:\s*([a-zA-Z0-9]+)/g;
+        const priceRegex = /(10|25)\.00/g;
+        let p = [], pr = [], m;
+        while((m = pinRegex.exec(text)) !== null) p.push(m[1]);
+        while((m = priceRegex.exec(text)) !== null) pr.push(parseInt(m[1]));
+        const batch = db.batch();
+        p.forEach((pin, i) => {
+            const ref = db.collection("fichas").doc();
+            batch.set(ref, { pin: pin, vendedor: v, precio: pr[i] || 25, estado: "disponible" });
+        });
+        await batch.commit(); alert("Cargadas: " + p.length); showSection('view-admin');
+    } catch(e) { alert("Error OCR"); }
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function updateAdminFinanzas() {
+    db.collection("ventas").get().then(snap => {
+        let b = 0; snap.forEach(d => b += d.data().precio);
+        let c = b * 0.15;
+        document.getElementById('finanzas-data').innerHTML = `
+            <div class="stat-box"><b>$${b}</b><small>Bruto</small></div>
+            <div class="stat-box" style="border-color:red"><b>$${c.toFixed(2)}</b><small>Comisiones</small></div>
+            <div class="stat-box" style="border-color:green"><b>$${(b-c).toFixed(2)}</b><small>Neto</small></div>
+        `;
+    });
+}
+
+function fetchMikrotik() {
+    const consoleBox = document.getElementById('mk-data');
+    consoleBox.innerHTML = "> Conectando a 443...";
+    // Aquí va tu lógica de fetch anterior.
+}
+
+function fillVendedoresDropdown() {
+    db.collection("usuarios").where("tipo", "==", "vendedor").get().then(snap => {
+        const sel = document.getElementById('scan-vendedor-select');
+        sel.innerHTML = "";
+        snap.forEach(doc => {
+            const opt = document.createElement('option');
+            opt.value = opt.text = doc.data().nombre;
+            sel.add(opt);
+        });
+    });
+}
+
+function handleLogout() { auth.signOut(); }
+</script>
 </body>
 </html>
