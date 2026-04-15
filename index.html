@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAFRI PRO v5.2 | IA Powered 🔥</title>
+    <title>SAFRI PRO v5.3 | Ultra Speed 🚀</title>
     
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root { --primary: #ff5722; --blue: #3498db; --green: #2ecc71; --dark: #2c3e50; --bg: #f4f7f6; }
@@ -17,145 +16,124 @@
         .container { width: 100%; max-width: 500px; margin: auto; padding: 15px; box-sizing: border-box; }
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); margin-bottom: 20px; }
         
-        button { width: 100%; margin-top: 10px; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; }
+        button { width: 100%; margin-top: 10px; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-blue { background: var(--blue); color: white; }
         .btn-green { background: var(--green); color: white; }
         .btn-outline { background: #eee; color: #555; }
         
-        .bigBtn { height: 70px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1em; }
-        
-        input, select { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-top: 10px; box-sizing: border-box; font-size: 16px; }
+        textarea { width: 100%; height: 120px; border-radius: 10px; border: 1px solid #ddd; padding: 12px; box-sizing: border-box; font-family: monospace; font-size: 14px; margin-top: 10px; }
+        input, select { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-top: 10px; box-sizing: border-box; }
 
-        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        td, th { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
     </style>
 </head>
 <body>
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h2 style="color:var(--primary); margin-top:20px;">IA PROCESANDO...</h2>
-    <p id="loading-status" style="color:#666;">Analizando patrones de PIN...</p>
+    <p id="loading-status" style="margin-top:20px; font-weight:bold;">Procesando...</p>
 </div>
 
 <div class="container" id="view-login" style="display:none">
     <div class="card" style="text-align: center; margin-top: 50px;">
         <h1 style="color:var(--primary);">SAFRI PRO</h1>
-        <form onsubmit="event.preventDefault(); handleLogin();">
-            <input id="login-email" type="email" placeholder="Correo" required>
-            <input id="login-pass" type="password" placeholder="Contraseña" required>
-            <button class="btn-primary" type="submit">Entrar al Sistema</button>
-        </form>
+        <input id="login-email" type="email" placeholder="Correo">
+        <input id="login-pass" type="password" placeholder="Contraseña">
+        <button class="btn-primary" onclick="handleLogin()">Entrar</button>
     </div>
 </div>
 
 <div class="container" id="view-admin" style="display:none">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="admin-name" style="margin:0;">Socio</h2>
-        <button onclick="handleLogout()" style="width:auto; margin:0; padding:8px 12px; font-size:12px; background:#ff4d4d; color:white;">Salir</button>
+        <h2>Socio</h2>
+        <button onclick="handleLogout()" style="width:auto; background:#ff4d4d; color:white; padding:8px 12px; font-size:12px;">Salir</button>
     </div>
 
-    <button class="bigBtn btn-primary" onclick="showSection('view-scan')" style="margin-top:20px;">📥 ESCANEAR HOJA DE FICHAS</button>
+    <button class="btn-primary" style="height:65px; font-size:1.1em;" onclick="showSection('view-scan')">📥 CARGAR NUEVAS FICHAS</button>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
-        <div class="card" style="margin:0; padding:15px; text-align:center;">
-            <small>Caja Hoy</small><b id="dash-caja-hoy" style="display:block; font-size:1.4em;">$0</b>
+        <div class="card" style="margin:0; text-align:center;">
+            <small>Ventas Hoy</small><b id="dash-caja-hoy" style="display:block; font-size:1.4em;">$0</b>
         </div>
-        <div class="card" style="margin:0; padding:15px; text-align:center;">
-            <small>Fichas Activas</small><b id="dash-stock-total" style="display:block; font-size:1.4em;">0</b>
+        <div class="card" style="margin:0; text-align:center;">
+            <small>Stock Red</small><b id="dash-stock-total" style="display:block; font-size:1.4em;">0</b>
         </div>
     </div>
 
-    <button class="btn-blue" onclick="showSection('view-lista-vendedores')">📊 REPORTE DE VENTAS</button>
-    <button class="btn-green" onclick="showSection('view-inventario')">📦 INVENTARIO POR VENDEDOR</button>
-    <button class="btn-outline" onclick="showSection('view-add-vendedor')">➕ REGISTRAR VENDEDOR</button>
+    <button class="btn-outline" onclick="showSection('view-inventario')">📦 Inventario por Vendedor</button>
+    <button class="btn-outline" onclick="showSection('view-add-vendedor')">➕ Registrar Vendedor</button>
 </div>
 
 <div class="container" id="view-scan" style="display:none">
     <div class="card">
-        <h3>Escanear Fichas ($10/$25)</h3>
-        <p style="font-size:13px; color:#666;">Asignar estas fichas al vendedor:</p>
+        <h3>Cargar Fichas</h3>
+        <small>1. Selecciona Vendedor:</small>
         <select id="scan-vendedor-select"></select>
         
-        <div style="background:#e3f2fd; padding:12px; border-radius:10px; margin-top:15px; font-size:12px; color:#0d47a1;">
-            <b>RECOMENDACIÓN IA:</b> Para fichas de $10 sin QR, asegúrate de que la foto esté derecha y con mucha luz.
+        <small style="display:block; margin-top:15px;">2. Precio de este lote:</small>
+        <select id="scan-precio-lote">
+            <option value="10">Fichas de $10.00</option>
+            <option value="25">Fichas de $25.00</option>
+        </select>
+
+        <hr style="margin:20px 0; opacity:0.2;">
+
+        <div id="metodo-texto">
+            <small><b>OPCIÓN A: Pegar lista de PINs</b></small>
+            <textarea id="texto-pins-batch" placeholder="Pega aquí los códigos o el texto copiado de MikroTik..."></textarea>
+            <button class="btn-green" onclick="processTextBatch()">CARGAR LISTA PEGADA</button>
         </div>
 
-        <button class="btn-primary" style="height:70px; margin-top:20px;" onclick="document.getElementById('file-input').click()">📸 TOMAR FOTO AHORA</button>
+        <div style="text-align:center; margin:15px 0; color:#999;">— O TAMBIÉN —</div>
+
+        <button class="btn-outline" onclick="document.getElementById('file-input').click()">📸 USAR CÁMARA (IA)</button>
         <input type="file" id="file-input" accept="image/*" style="display:none" onchange="processOCR()">
         
-        <button class="btn-outline" onclick="showSection('view-admin')" style="margin-top:20px;">Volver</button>
+        <button class="btn-outline" onclick="showSection('view-admin')" style="margin-top:30px; border-color:transparent;">Volver</button>
     </div>
 </div>
 
 <div class="container" id="view-vendedor" style="display:none">
     <div class="card" style="text-align:center;">
-        <h2 id="vend-name" style="margin:0; color:var(--primary);">Vendedor</h2>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
-            <div style="background:#f8f9fa; padding:15px; border-radius:15px;">
-                <small>Mis Ventas Hoy</small><b id="v-count-hoy" style="display:block; font-size:1.5em;">0</b>
+        <h2 id="vend-name" style="color:var(--primary);">Vendedor</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="card" style="margin:0; background:#f9f9f9; box-shadow:none;">
+                <small>Ventas Hoy</small><b id="v-count-hoy" style="display:block; font-size:1.4em;">0</b>
             </div>
-            <div style="background:#f8f9fa; padding:15px; border-radius:15px;">
-                <small>Mi Comisión</small><b id="v-com-hoy" style="display:block; font-size:1.5em;">$0</b>
+            <div class="card" style="margin:0; background:#f9f9f9; box-shadow:none;">
+                <small>Comisión</small><b id="v-com-hoy" style="display:block; font-size:1.4em;">$0</b>
             </div>
         </div>
-
-        <button class="bigBtn btn-green" style="margin-top:20px;" onclick="showSection('view-vender-pin')">💸 ENTREGAR FICHA (Vender)</button>
-        
-        <div style="margin-top:25px; border-top:1px solid #eee; padding-top:15px;">
-            <small style="color:#888;">MI INVENTARIO ACTUAL:</small>
-            <div id="v-my-stock" style="font-weight:bold; font-size:1.2em; color:var(--blue);">Cargando...</div>
+        <button class="btn-green" style="height:65px; margin-top:20px;" onclick="showSection('view-vender-pin')">💸 VENDER PIN</button>
+        <div style="margin-top:20px;">
+            <small>Mi Stock:</small> <b id="v-my-stock">0 fichas</b>
         </div>
-
         <button class="btn-outline" onclick="handleLogout()" style="margin-top:30px;">Cerrar Sesión</button>
     </div>
 </div>
 
 <div class="container" id="view-vender-pin" style="display:none">
     <div class="card">
-        <h3>Registrar PIN Entregado</h3>
-        <input id="input-pin-vender" placeholder="Ingresa el PIN" style="height:60px; font-size:24px; text-align:center;">
-        <button class="btn-green" onclick="confirmVenta()" style="height:60px; margin-top:15px;">CONFIRMAR VENTA</button>
-        <button class="btn-outline" onclick="showSection('view-vendedor')">Regresar</button>
+        <h3>Entregar PIN</h3>
+        <input id="input-pin-vender" placeholder="Escribe el PIN" style="font-size:20px; text-align:center;">
+        <button class="btn-green" onclick="confirmVenta()">CONFIRMAR ENTREGA</button>
+        <button class="btn-outline" onclick="showSection('view-vendedor')">Cancelar</button>
     </div>
 </div>
 
 <div class="container" id="view-inventario" style="display:none">
     <div class="card">
-        <h3>Stock en Red</h3>
+        <h3>Inventario</h3>
         <table id="tabla-inventario">
-            <thead><tr><th>Vendedor</th><th>$10</th><th>$25</th><th>Total</th></tr></thead>
+            <thead><tr><th>Vendedor</th><th>$10</th><th>$25</th></tr></thead>
             <tbody></tbody>
         </table>
-        <button class="btn-outline" onclick="showSection('view-admin')" style="margin-top:20px;">Volver</button>
-    </div>
-</div>
-
-<div class="container" id="view-lista-vendedores" style="display:none">
-    <div class="card">
-        <h3>Rendimiento de Ventas</h3>
-        <canvas id="chartVentas" style="margin-bottom:20px;"></canvas>
-        <table id="tabla-reporte-vendedores">
-            <thead><tr><th>Vendedor</th><th>Cant.</th><th>Monto</th></tr></thead>
-            <tbody id="body-reporte-vendedores"></tbody>
-        </table>
-        <button class="btn-outline" onclick="showSection('view-admin')" style="margin-top:20px;">Volver</button>
-    </div>
-</div>
-
-<div class="container" id="view-add-vendedor" style="display:none">
-    <div class="card">
-        <h3>Crear Nueva Cuenta</h3>
-        <input id="new-vend-name" placeholder="Nombre completo">
-        <input id="new-vend-email" type="email" placeholder="Correo electrónico">
-        <input id="new-vend-pass" type="password" placeholder="Contraseña">
-        <button class="btn-primary" onclick="addNewVendedor()">GUARDAR VENDEDOR</button>
-        <button class="btn-outline" onclick="showSection('view-admin')">Cancelar</button>
+        <button class="btn-outline" onclick="showSection('view-admin')">Volver</button>
     </div>
 </div>
 
@@ -171,155 +149,120 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let currentUser = null;
-let myChart = null;
 
-// --- CONTROL DE VISTAS ---
 function showSection(id) {
     document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
     document.getElementById(id).style.display = 'block';
     if(id === 'view-admin') updateAdminDashboard();
     if(id === 'view-vendedor') updateVendedorView();
     if(id === 'view-inventario') loadInventario();
-    if(id === 'view-lista-vendedores') loadVendedoresList();
 }
 
-// --- AUTENTICACIÓN ---
 auth.onAuthStateChanged(user => {
     if (user) {
         db.collection("usuarios").doc(user.uid).get().then(doc => {
-            currentUser = doc.data();
-            currentUser.uid = user.uid;
-            if(currentUser.tipo === 'admin') {
-                showSection('view-admin');
-                fillVendedoresDropdown();
-            } else {
-                showSection('view-vendedor');
-                updateVendedorView();
-            }
+            currentUser = doc.data(); currentUser.uid = user.uid;
+            showSection(currentUser.tipo === 'admin' ? 'view-admin' : 'view-vendedor');
+            if(currentUser.tipo === 'admin') fillVendedoresDropdown();
         });
-    } else {
-        showSection('view-login');
-    }
+    } else { showSection('view-login'); }
 });
 
-function handleLogin() {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-pass').value;
-    auth.signInWithEmailAndPassword(e, p).catch(err => alert("Error al entrar"));
-}
-function handleLogout() { auth.signOut(); }
+// --- CARGA POR TEXTO PEGADO (LA SOLUCIÓN RÁPIDA) ---
+async function processTextBatch() {
+    const rawText = document.getElementById('texto-pins-batch').value;
+    const vName = document.getElementById('scan-vendedor-select').value;
+    const precio = parseInt(document.getElementById('scan-precio-lote').value);
+    
+    if(!rawText.trim()) return alert("Pega algún texto primero.");
 
-// --- IA DE ESCANEO REFORZADA ---
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loading-status').innerText = "Guardando lista...";
+
+    // Regex para extraer códigos: busca palabras de 4 a 10 caracteres (letras y números)
+    // Se salta la palabra "PIN" si existe
+    const pinsFound = rawText.match(/[a-zA-Z0-9]{4,10}/g) || [];
+    
+    // Filtramos palabras comunes que NO son pins (como la misma palabra PIN o precios)
+    const filtrados = pinsFound.filter(p => p.toLowerCase() !== 'pin' && p !== '10' && p !== '25');
+
+    if(filtrados.length === 0) {
+        alert("No se encontraron códigos válidos en el texto.");
+    } else {
+        const batch = db.batch();
+        filtrados.forEach(p => {
+            const ref = db.collection("fichas").doc();
+            batch.set(ref, { pin: p, vendedor: vName, precio: precio, estado: "disponible", fecha: new Date() });
+        });
+        await batch.commit();
+        alert(`✅ ¡Listo! Se cargaron ${filtrados.length} fichas exitosamente.`);
+        document.getElementById('texto-pins-batch').value = "";
+    }
+    document.getElementById('loadingOverlay').style.display = 'none';
+    showSection('view-admin');
+}
+
+// --- CARGA POR CÁMARA (MANTIENE LA IA) ---
 async function processOCR() {
     const file = document.getElementById('file-input').files[0];
     const vName = document.getElementById('scan-vendedor-select').value;
+    const precio = parseInt(document.getElementById('scan-precio-lote').value);
     if(!file) return;
 
     const overlay = document.getElementById('loadingOverlay');
-    const status = document.getElementById('loading-status');
     overlay.style.display = 'flex';
-    status.innerText = "Iniciando Motor IA...";
+    document.getElementById('loading-status').innerText = "IA Analizando foto...";
 
     try {
-        const worker = await Tesseract.createWorker({
-            logger: m => {
-                if(m.status === 'recognizing text') 
-                    status.innerText = `IA Leyendo: ${(m.progress * 100).toFixed(0)}%`;
-            }
-        });
-
-        await worker.loadLanguage('eng');
-        await worker.initialize('eng');
-        
-        // Optimización de lectura para números y letras de PIN
-        await worker.setParameters({
-            tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz:.$ ',
-        });
-
+        const worker = await Tesseract.createWorker();
+        await worker.loadLanguage('eng'); await worker.initialize('eng');
         const { data: { text } } = await worker.recognize(file);
         await worker.terminate();
 
-        // Regex inteligente para detectar PIN: [CODIGO]
-        const pinRegex = /(?:PIN|Pin|pin|PlN)[:\s]*([a-zA-Z0-9]{4,10})/g;
-        const priceRegex = /(10|25)[.,\s]*00/g;
+        const pins = text.match(/[a-zA-Z0-9]{4,10}/g) || [];
+        const filtrados = pins.filter(p => p.toLowerCase() !== 'pin' && isNaN(p));
 
-        let pins = [];
-        let prices = [];
-        let m;
-
-        while ((m = pinRegex.exec(text)) !== null) pins.push(m[1]);
-        while ((m = priceRegex.exec(text)) !== null) prices.push(parseInt(m[1]));
-
-        if (pins.length === 0) {
-            alert("⚠️ La IA no detectó los PINs. Asegúrate de que la foto no tenga sombras sobre el texto.");
-        } else {
+        if(filtrados.length > 0) {
             const batch = db.batch();
-            const precioFijo = prices[0] || 10; // Si no detecta precio, asume 10
-
-            pins.forEach((p) => {
-                const ref = db.collection("fichas").doc();
-                batch.set(ref, {
-                    pin: p,
-                    vendedor: vName,
-                    precio: precioFijo,
-                    estado: "disponible",
-                    fecha: new Date()
-                });
-            });
+            filtrados.forEach(p => batch.set(db.collection("fichas").doc(), { pin: p, vendedor: vName, precio: precio, estado: "disponible", fecha: new Date() }));
             await batch.commit();
-            alert(`✅ IA completada: Se cargaron ${pins.length} fichas.`);
-        }
-    } catch (e) {
-        alert("Error de procesamiento IA.");
-    }
+            alert("Cargadas: " + filtrados.length);
+        } else { alert("IA no detectó códigos claros."); }
+    } catch (e) { alert("Error en foto"); }
     overlay.style.display = 'none';
     showSection('view-admin');
 }
 
-// --- VISTA VENDEDOR ---
+// --- LÓGICA DE VENTA Y DASHBOARD ---
 async function updateVendedorView() {
     if(!currentUser) return;
-    document.getElementById('vend-name').innerText = "Hola, " + currentUser.nombre;
+    document.getElementById('vend-name').innerText = currentUser.nombre;
     const hoy = new Date(); hoy.setHours(0,0,0,0);
 
-    const vSnap = await db.collection("ventas")
-        .where("vendedor", "==", currentUser.nombre)
-        .where("fecha", ">=", hoy).get();
-    
+    const vSnap = await db.collection("ventas").where("vendedor", "==", currentUser.nombre).where("fecha", ">=", hoy).get();
     let total = 0; vSnap.forEach(d => total += d.data().precio);
     document.getElementById('v-count-hoy').innerText = vSnap.size;
     document.getElementById('v-com-hoy').innerText = "$" + (total * 0.15).toFixed(2);
 
-    const sSnap = await db.collection("fichas")
-        .where("vendedor", "==", currentUser.nombre)
-        .where("estado", "==", "disponible").get();
-    document.getElementById('v-my-stock').innerText = sSnap.size + " fichas en tu bolsa";
+    const sSnap = await db.collection("fichas").where("vendedor", "==", currentUser.nombre).where("estado", "==", "disponible").get();
+    document.getElementById('v-my-stock').innerText = sSnap.size + " fichas";
 }
 
 async function confirmVenta() {
-    const pInput = document.getElementById('input-pin-vender');
-    const pin = pInput.value.trim();
-    if(!pin) return;
+    const pin = document.getElementById('input-pin-vender').value.trim();
+    const snap = await db.collection("fichas").where("pin", "==", pin).where("vendedor", "==", currentUser.nombre).get();
 
-    const snap = await db.collection("fichas")
-        .where("pin", "==", pin)
-        .where("vendedor", "==", currentUser.nombre).get();
-
-    if(snap.empty) return alert("❌ Este PIN no está en tu inventario o ya fue vendido.");
-
+    if(snap.empty) return alert("PIN no encontrado en tu stock.");
     const docF = snap.docs[0];
     await docF.ref.update({ estado: "vendida", fechaVenta: new Date() });
-    await db.collection("ventas").add({
-        pin: pin, vendedor: currentUser.nombre, precio: docF.data().precio, fecha: new Date()
-    });
-
-    alert("✅ Venta registrada");
-    pInput.value = "";
+    await db.collection("ventas").add({ pin: pin, vendedor: currentUser.nombre, precio: docF.data().precio, fecha: new Date() });
+    
+    alert("Vendido");
+    document.getElementById('input-pin-vender').value = "";
     updateVendedorView();
     showSection('view-vendedor');
 }
 
-// --- FUNCIONES SOCIO ---
 function updateAdminDashboard() {
     const hoy = new Date(); hoy.setHours(0,0,0,0);
     db.collection("ventas").where("fecha", ">=", hoy).get().then(snap => {
@@ -333,47 +276,14 @@ function updateAdminDashboard() {
 
 async function loadInventario() {
     const tbody = document.querySelector('#tabla-inventario tbody');
-    tbody.innerHTML = "Cargando...";
+    tbody.innerHTML = "";
     const snap = await db.collection("fichas").where("estado", "==", "disponible").get();
-    let stock = {};
+    let st = {};
     snap.forEach(f => {
-        const d = f.data();
-        if(!stock[d.vendedor]) stock[d.vendedor] = { s10: 0, s25: 0 };
-        if(d.precio == 10) stock[d.vendedor].s10++; else stock[d.vendedor].s25++;
+        let d = f.data(); if(!st[d.vendedor]) st[d.vendedor] = {s10:0, s25:0};
+        if(d.precio == 10) st[d.vendedor].s10++; else st[d.vendedor].s25++;
     });
-    tbody.innerHTML = "";
-    for(let v in stock) {
-        tbody.innerHTML += `<tr><td>${v}</td><td>${stock[v].s10}</td><td>${stock[v].s25}</td><td><b>${stock[v].s10+stock[v].s25}</b></td></tr>`;
-    }
-}
-
-async function loadVendedoresList() {
-    const tbody = document.getElementById('body-reporte-vendedores');
-    const vSnap = await db.collection("ventas").get();
-    const uSnap = await db.collection("usuarios").where("tipo", "==", "vendedor").get();
-    
-    let stats = {};
-    vSnap.forEach(v => {
-        const d = v.data();
-        if(!stats[d.vendedor]) stats[d.vendedor] = { c: 0, m: 0 };
-        stats[d.vendedor].c++; stats[d.vendedor].m += d.precio;
-    });
-
-    tbody.innerHTML = "";
-    let labels = [], data = [];
-    uSnap.forEach(u => {
-        const n = u.data().nombre;
-        const s = stats[n] || { c: 0, m: 0 };
-        labels.push(n); data.push(s.m);
-        tbody.innerHTML += `<tr><td>${n}</td><td>${s.c}</td><td>$${s.m}</td></tr>`;
-    });
-
-    const ctx = document.getElementById('chartVentas').getContext('2d');
-    if(myChart) myChart.destroy();
-    myChart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: labels, datasets: [{ label: 'Ventas $', data: data, backgroundColor: '#3498db' }] }
-    });
+    for(let v in st) tbody.innerHTML += `<tr><td>${v}</td><td>${st[v].s10}</td><td>${st[v].s25}</td></tr>`;
 }
 
 function fillVendedoresDropdown() {
@@ -388,15 +298,18 @@ function fillVendedoresDropdown() {
     });
 }
 
+function handleLogin() {
+    auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value);
+}
+function handleLogout() { auth.signOut(); }
 function addNewVendedor() {
     const n = document.getElementById('new-vend-name').value;
     const e = document.getElementById('new-vend-email').value;
     const p = document.getElementById('new-vend-pass').value;
     auth.createUserWithEmailAndPassword(e, p).then(res => {
         db.collection("usuarios").doc(res.user.uid).set({ nombre: n, tipo: "vendedor" });
-        alert("¡Vendedor registrado con éxito!");
-        showSection('view-admin');
-    }).catch(err => alert(err.message));
+        alert("Creado"); showSection('view-admin');
+    });
 }
 </script>
 </body>
