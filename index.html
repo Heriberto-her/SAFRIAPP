@@ -3,112 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAFRI PRO v4.3 🔥</title>
+    <title>SAFRI PRO v5.1 🔥</title>
     
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        :root { --primary: #ff5722; --blue: #3498db; --green: #2ecc71; --dark: #2c3e50; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; }
-        .container { width: 100%; max-width: 480px; margin: auto; padding: 15px; box-sizing: border-box; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        :root { --primary: #ff5722; --blue: #3498db; --green: #2ecc71; --dark: #2c3e50; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
+        .container { width: 100%; max-width: 500px; margin: auto; padding: 15px; box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); margin-bottom: 20px; }
         
-        input, select, button { width: 100%; margin-top: 12px; padding: 14px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:active { transform: scale(0.96); }
+        button { width: 100%; margin-top: 10px; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: #eee; color: #555; }
         
-        .bigBtn { height: 60px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1em; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .stat-box { background: #f8f9fa; padding: 12px; border-radius: 10px; border-left: 4px solid var(--primary); text-align: left; }
+        .bigBtn { height: 65px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1em; }
         
-        .vendedores-list { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .vendedores-list td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
-        
-        #loadingOverlay { display: none; margin-top: 15px; background: #fff3e0; padding: 15px; border-radius: 10px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
+        /* Loading optimizado */
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-top: 10px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
     </style>
 </head>
 <body>
 
-<div id="splash" style="position:fixed;width:100%;height:100%;background:white;z-index:2000;display:flex;align-items:center;justify-content:center;">
-    <h1 style="color:var(--primary);">🔥 SAFRI PRO</h1>
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <h2 style="color:var(--primary); margin-bottom:5px;">Escaneando Fichas...</h2>
+    <p id="loading-status" style="color:#666;">Inicializando inteligencia artificial...</p>
+    <small style="color:#999;">Esto puede tardar 10-15 segundos según la calidad de la foto.</small>
 </div>
 
 <div class="container" id="view-login" style="display:none">
-    <div class="card">
-        <h2>Bienvenido</h2>
+    <div class="card" style="text-align: center; margin-top: 50px;">
+        <h1 style="color:var(--primary);">SAFRI PRO</h1>
         <form onsubmit="event.preventDefault(); handleLogin();">
-            <input id="login-email" type="email" placeholder="Correo" autocomplete="username" required>
-            <input id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password" required>
-            <button type="submit">Entrar</button>
+            <input id="login-email" type="email" placeholder="Correo" required>
+            <input id="login-pass" type="password" placeholder="Contraseña" required>
+            <button class="btn-primary" type="submit">Entrar</button>
         </form>
     </div>
 </div>
 
 <div class="container" id="view-admin" style="display:none">
+    <h2 id="admin-name">Socio</h2>
+    <button class="bigBtn btn-primary" onclick="showSection('view-scan')">📥 ESCANEAR HOJA (SIN QR)</button>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
+        <div class="card" style="margin:0; padding:15px;" onclick="showSection('view-lista-vendedores')">
+            <small>Caja Hoy</small><b id="dash-caja-hoy" style="display:block; font-size:1.4em;">$0</b>
+        </div>
+        <div class="card" style="margin:0; padding:15px;" onclick="showSection('view-inventario')">
+            <small>Stock Total</small><b id="dash-stock-total" style="display:block; font-size:1.4em;">0</b>
+        </div>
+    </div>
+
+    <button class="bigBtn" style="background:var(--blue); color:white;" onclick="showSection('view-lista-vendedores')">📊 REPORTE Y GRÁFICAS</button>
+    <button class="bigBtn" style="background:var(--green); color:white;" onclick="showSection('view-inventario')">📦 INVENTARIO POR VENDEDOR</button>
+    <button class="btn-outline" onclick="showSection('view-add-vendedor')">➕ NUEVO VENDEDOR</button>
+    <button onclick="handleLogout()" style="background:#ff4d4d; color:white; margin-top:30px;">Cerrar Sesión</button>
+</div>
+
+<div class="container" id="view-scan" style="display:none">
     <div class="card">
-        <h2 id="admin-name">Socio</h2>
-        <button class="bigBtn" onclick="showSection('view-scan')">📥 ESCANEAR HOJA</button>
-        <button class="bigBtn" onclick="showSection('view-lista-vendedores')" style="background:var(--blue)">👥 LISTA DE VENDEDORES</button>
-        <button class="bigBtn" onclick="showSection('view-add-vendedor')" style="background:#555">➕ REGISTRAR NUEVO</button>
-        <button class="bigBtn" onclick="showSection('view-finanzas')" style="background:#9b59b6">💰 CORTE DE CAJA</button>
-        <button onclick="handleLogout()" style="background:#e74c3c; margin-top:20px;">Cerrar Sesión</button>
+        <h3>Cargar Fichas de $10 / $25</h3>
+        <p style="font-size:12px; color:#666;">Asignar a este vendedor:</p>
+        <select id="scan-vendedor-select"></select>
+        
+        <div style="background:#fff3e0; padding:10px; border-radius:10px; margin-top:15px; font-size:12px; border-left:4px solid #ff9800;">
+            <b>Tips para fichas de $10:</b><br>
+            • Limpia la cámara.<br>
+            • Mucha luz (mejor si es de día).<br>
+            • Enfoca bien el texto "PIN:".
+        </div>
+
+        <button class="btn-primary" style="height:70px; margin-top:20px;" onclick="document.getElementById('file-input').click()">📸 TOMAR FOTO DE LA HOJA</button>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="processOCR()">
+        
+        <button class="btn-outline" onclick="showSection('view-admin')" style="margin-top:20px;">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-inventario" style="display:none">
+    <div class="card">
+        <h3>Stock en Red</h3>
+        <table id="tabla-inventario">
+            <thead><tr><th>Vendedor</th><th>$10</th><th>$25</th><th>Total</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button class="btn-outline" onclick="showSection('view-admin')">Volver</button>
     </div>
 </div>
 
 <div class="container" id="view-lista-vendedores" style="display:none">
     <div class="card">
-        <h3>Vendedores y Ventas</h3>
-        <table class="vendedores-list">
-            <tbody id="tabla-vendedores-body"></tbody>
+        <h3>Ventas del Periodo</h3>
+        <canvas id="chartVentas" style="margin-bottom:20px;"></canvas>
+        <table id="tabla-reporte-vendedores">
+            <thead><tr><th>Vendedor</th><th>Monto</th></tr></thead>
+            <tbody id="body-reporte-vendedores"></tbody>
         </table>
-        <button onclick="showSection('view-admin')" style="background:#777; margin-top:20px;">Volver</button>
-    </div>
-</div>
-
-<div class="container" id="view-scan" style="display:none">
-    <div class="card">
-        <h3>Escáner de Fichas</h3>
-        <p style="font-size:12px; color:#666;">Selecciona a quién asignar estas fichas:</p>
-        <select id="scan-vendedor-select"></select>
-        <button onclick="document.getElementById('file-input').click()" style="background:var(--green); margin-top:10px;">📸 TOMAR FOTO</button>
-        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="processOCR()">
-        
-        <div id="loadingOverlay">
-            <div class="spinner"></div>
-            <div id="scan-progress" style="margin-top:10px; font-weight:bold;">Iniciando cámara...</div>
-        </div>
-        <button onclick="showSection('view-admin')" style="background:#777; margin-top:20px;">Volver</button>
-    </div>
-</div>
-
-<div class="container" id="view-vendedor" style="display:none">
-    <div class="card">
-        <h2 id="vend-name">Vendedor</h2>
-        <div class="stats-grid">
-            <div class="stat-box"><small>Fichas</small><b id="v-count">0</b></div>
-            <div class="stat-box"><small>Mi Ganancia</small><b id="v-comision">$0.00</b></div>
-        </div>
-        <button class="bigBtn" onclick="showSection('view-vender-pin')">💸 VENDER PIN</button>
-        <button onclick="handleLogout()" style="background:#e74c3c; margin-top:20px;">Cerrar Sesión</button>
-    </div>
-</div>
-
-<div class="container" id="view-vender-pin" style="display:none">
-    <div class="card">
-        <h3>Registrar Venta</h3>
-        <input id="input-pin-vender" placeholder="Ingresa el PIN">
-        <button onclick="confirmVenta()" style="background:var(--green)">Confirmar Entrega</button>
-        <button onclick="showSection('view-vendedor')" style="background:#777">Volver</button>
+        <button class="btn-outline" onclick="showSection('view-admin')">Volver</button>
     </div>
 </div>
 
 <script>
-// --- FIREBASE ---
+// --- CONFIG FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w",
     authDomain: "safriapp-2f1db.firebaseapp.com",
@@ -124,141 +132,101 @@ let currentUser = null;
 function showSection(id) {
     document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
     document.getElementById(id).style.display = 'block';
+    if(id === 'view-admin') updateAdminDashboard();
+    if(id === 'view-inventario') loadInventario();
     if(id === 'view-lista-vendedores') loadVendedoresList();
-    if(id === 'view-vendedor') updateVendedorStats();
-    if(id === 'view-admin') fillVendedoresDropdown();
 }
 
-// --- AUTH ---
 auth.onAuthStateChanged(user => {
-    document.getElementById('splash').style.display = 'none';
     if (user) {
         db.collection("usuarios").doc(user.uid).get().then(doc => {
             currentUser = doc.data();
-            currentUser.uid = user.uid;
-            if(currentUser.tipo === 'admin') showSection('view-admin');
-            else showSection('view-vendedor');
+            showSection(currentUser.tipo === 'admin' ? 'view-admin' : 'view-vendedor');
+            if(currentUser.tipo === 'admin') fillVendedoresDropdown();
         });
     } else { showSection('view-login'); }
 });
 
-function handleLogin() {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-pass').value;
-    auth.signInWithEmailAndPassword(e, p).catch(err => alert("Error: " + err.message));
-}
-
-function handleLogout() { auth.signOut(); }
-
-// --- ESCÁNER CORREGIDO ---
+// --- EL NUEVO ESCÁNER REFORZADO ---
 async function processOCR() {
     const file = document.getElementById('file-input').files[0];
-    const vSelected = document.getElementById('scan-vendedor-select').value;
+    const vName = document.getElementById('scan-vendedor-select').value;
     if(!file) return;
 
-    document.getElementById('loadingOverlay').style.display = 'block';
-    const progress = document.getElementById('scan-progress');
-    progress.innerText = "Leyendo imagen...";
+    const overlay = document.getElementById('loadingOverlay');
+    const status = document.getElementById('loading-status');
+    overlay.style.display = 'flex';
+    status.innerText = "Cargando Motor IA...";
 
     try {
         const worker = await Tesseract.createWorker({
-            logger: m => { if(m.status === 'recognizing text') progress.innerText = `Procesando: ${(m.progress*100).toFixed(0)}%`; }
+            logger: m => {
+                if(m.status === 'recognizing text') {
+                    status.innerText = `Analizando texto: ${(m.progress * 100).toFixed(0)}%`;
+                }
+            }
         });
+
         await worker.loadLanguage('eng');
         await worker.initialize('eng');
+        
+        // Parámetros de OCR para mejor detección de números pequeños
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz:.$ ',
+        });
+
         const { data: { text } } = await worker.recognize(file);
         await worker.terminate();
 
-        const pinRegex = /PIN:\s*([a-zA-Z0-9]+)/g;
-        const priceRegex = /(10|25)\.00/g;
-        let pins = [], prices = [], match;
+        console.log("Texto detectado:", text); // Para depuración
 
-        while ((match = pinRegex.exec(text)) !== null) pins.push(match[1]);
-        while ((match = priceRegex.exec(text)) !== null) prices.push(parseInt(match[1]));
+        // REGEX MEJORADO: Busca "PIN:" ignorando espacios y mayúsculas/minúsculas
+        const pinRegex = /(?:PIN|Pin|pin)[:\s]*([a-zA-Z0-9]{4,12})/g;
+        // REGEX PRECIO: Busca 10.00 o 25.00
+        const priceRegex = /(10|25)[.,\s]*00/g;
 
-        if(pins.length === 0) {
-            alert("No se detectaron pines. Asegúrate que la foto sea clara.");
+        let pinsFound = [];
+        let match;
+        while ((match = pinRegex.exec(text)) !== null) {
+            pinsFound.push(match[1]);
+        }
+
+        let pricesFound = [];
+        while ((match = priceRegex.exec(text)) !== null) {
+            pricesFound.push(parseInt(match[1]));
+        }
+
+        if (pinsFound.length === 0) {
+            alert("No se detectaron pines. Intenta tomar la foto más cerca de la hoja y con más luz.");
         } else {
             const batch = db.batch();
-            pins.forEach((p, i) => {
+            pinsFound.forEach((pin, i) => {
                 const ref = db.collection("fichas").doc();
+                // Si no detecta el precio individualmente, asume el primero que encuentre o 10 por defecto
+                const precioAsignado = pricesFound[i] || pricesFound[0] || 10;
+                
                 batch.set(ref, {
-                    pin: p,
-                    vendedor: vSelected,
-                    precio: prices[i] || prices[0] || 25,
+                    pin: pin,
+                    vendedor: vName,
+                    precio: precioAsignado,
                     estado: "disponible",
-                    fecha: new Date()
+                    fechaCarga: new Date()
                 });
             });
             await batch.commit();
-            alert(`✅ Se cargaron ${pins.length} fichas con éxito.`);
+            alert(`✅ ¡Éxito! Se cargaron ${pinsFound.length} fichas de $${pricesFound[0] || '?'}.`);
         }
+
     } catch (e) {
         console.error(e);
-        alert("Error al procesar la imagen.");
+        alert("Hubo un error al procesar la imagen.");
     }
-    document.getElementById('loadingOverlay').style.display = 'none';
+
+    overlay.style.display = 'none';
     showSection('view-admin');
 }
 
-// --- VENDEDORES Y VENTAS ---
-async function loadVendedoresList() {
-    const tbody = document.getElementById('tabla-vendedores-body');
-    tbody.innerHTML = "<tr><td>Cargando datos...</td></tr>";
-    
-    const usersSnap = await db.collection("usuarios").where("tipo", "==", "vendedor").get();
-    const ventasSnap = await db.collection("ventas").get();
-    
-    let stats = {};
-    ventasSnap.forEach(v => {
-        const d = v.data();
-        if(!stats[d.vendedor]) stats[d.vendedor] = { c: 0, m: 0 };
-        stats[d.vendedor].c++;
-        stats[d.vendedor].m += d.precio;
-    });
-
-    tbody.innerHTML = "";
-    usersSnap.forEach(u => {
-        const user = u.data();
-        const s = stats[user.nombre] || { c: 0, m: 0 };
-        tbody.innerHTML += `
-            <tr>
-                <td><b>${user.nombre}</b><br><small>${s.c} ventas</small></td>
-                <td style="text-align:right"><b>$${s.m.toFixed(2)}</b></td>
-            </tr>
-        `;
-    });
-}
-
-async function confirmVenta() {
-    const pin = document.getElementById('input-pin-vender').value.trim();
-    if(!pin) return;
-    const snap = await db.collection("fichas").where("pin", "==", pin).get();
-    
-    if(snap.empty) return alert("❌ PIN incorrecto o no existe.");
-    const docF = snap.docs[0];
-    if(docF.data().estado === "vendida") return alert("⚠️ Ya fue vendida.");
-
-    await docF.ref.update({ estado: "vendida", fechaVenta: new Date() });
-    await db.collection("ventas").add({
-        pin: pin,
-        vendedor: currentUser.nombre,
-        precio: docF.data().precio,
-        fecha: new Date()
-    });
-    alert("✅ Venta registrada");
-    document.getElementById('input-pin-vender').value = "";
-    updateVendedorStats();
-}
-
-function updateVendedorStats() {
-    db.collection("ventas").where("vendedor", "==", currentUser.nombre).get().then(snap => {
-        let t = 0; snap.forEach(d => t += d.data().precio);
-        document.getElementById('v-count').innerText = snap.size;
-        document.getElementById('v-comision').innerText = "$" + (t * 0.15).toFixed(2);
-    });
-}
-
+// --- FUNCIONES DE APOYO (REUTILIZADAS) ---
 function fillVendedoresDropdown() {
     db.collection("usuarios").where("tipo", "==", "vendedor").get().then(snap => {
         const sel = document.getElementById('scan-vendedor-select');
@@ -270,6 +238,38 @@ function fillVendedoresDropdown() {
         });
     });
 }
+
+function updateAdminDashboard() {
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    db.collection("ventas").where("fecha", ">=", hoy).get().then(snap => {
+        let t = 0; snap.forEach(d => t += d.data().precio);
+        document.getElementById('dash-caja-hoy').innerText = "$" + t;
+    });
+    db.collection("fichas").where("estado", "==", "disponible").get().then(snap => {
+        document.getElementById('dash-stock-total').innerText = snap.size;
+    });
+}
+
+async function loadInventario() {
+    const tbody = document.querySelector('#tabla-inventario tbody');
+    tbody.innerHTML = "Cargando...";
+    const snap = await db.collection("fichas").where("estado", "==", "disponible").get();
+    let stock = {};
+    snap.forEach(f => {
+        const d = f.data();
+        if(!stock[d.vendedor]) stock[d.vendedor] = { s10: 0, s25: 0 };
+        if(d.precio == 10) stock[d.vendedor].s10++; else stock[d.vendedor].s25++;
+    });
+    tbody.innerHTML = "";
+    for(let v in stock) {
+        tbody.innerHTML += `<tr><td>${v}</td><td>${stock[v].s10}</td><td>${stock[v].s25}</td><td><b>${stock[v].s10+stock[v].s25}</b></td></tr>`;
+    }
+}
+
+function handleLogin() {
+    auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value);
+}
+function handleLogout() { auth.signOut(); }
 </script>
 </body>
 </html>
