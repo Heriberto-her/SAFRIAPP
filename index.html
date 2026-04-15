@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAFRI PRO v5.4 | Finanzas Transparentes 💰</title>
+    <title>SAFRI PRO v6.0 | Sistema Integral</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -22,130 +21,130 @@
         .btn-blue { background: var(--blue); color: white; }
         .btn-outline { background: #eee; color: #555; }
         
-        .finanzas-box { background: #fffde7; border: 2px dashed #fdd835; padding: 15px; border-radius: 15px; margin-top: 15px; }
-        .money { font-size: 22px; font-weight: bold; color: var(--dark); }
-        .label-fin { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .finanzas-box { background: #fffde7; border: 1px solid #fdd835; padding: 15px; border-radius: 15px; margin-top: 10px; }
+        .money { font-size: 20px; font-weight: bold; }
+        .label-fin { font-size: 11px; color: #666; text-transform: uppercase; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
         .txt-green { color: var(--green); }
         .txt-red { color: #e74c3c; }
 
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loadingOverlay">
-    <div class="spinner"></div>
-    <p style="margin-top:20px; font-weight:bold;">Actualizando datos...</p>
-</div>
+<div id="loadingOverlay"><p>Cargando...</p></div>
 
 <div class="container" id="view-login" style="display:none">
     <div class="card" style="text-align: center; margin-top: 50px;">
         <h1 style="color:var(--primary);">SAFRI PRO</h1>
-        <input id="login-email" type="email" placeholder="Correo" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #ddd;">
-        <input id="login-pass" type="password" placeholder="Contraseña" style="width:100%; padding:12px; margin-bottom:20px; border-radius:10px; border:1px solid #ddd;">
+        <input id="login-email" type="email" placeholder="Correo">
+        <input id="login-pass" type="password" placeholder="Contraseña">
         <button class="btn-primary" onclick="handleLogin()">INICIAR SESIÓN</button>
     </div>
 </div>
 
 <div class="container" id="view-admin" style="display:none">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h2 style="margin:0;">Panel Socio</h2>
-        <button onclick="handleLogout()" style="width:auto; background:#ff4d4d; color:white; padding:8px 12px; font-size:12px;">Cerrar</button>
+        <h2 style="margin:0;">Socio Administrativo</h2>
+        <button onclick="handleLogout()" style="width:auto; background:#ff4d4d; color:white; padding:8px 12px; font-size:12px;">Salir</button>
     </div>
 
-    <button class="btn-primary" style="height:60px;" onclick="showSection('view-scan')">📥 CARGAR FICHAS / CÓDIGOS</button>
+    <div class="card" style="padding: 15px;">
+        <button class="btn-primary" style="height:60px;" onclick="showSection('view-scan')">📥 CARGAR NUEVAS FICHAS</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+            <button class="btn-blue" onclick="showSection('view-inventario')">📦 VER STOCK</button>
+            <button class="btn-outline" onclick="showSection('view-add-vendedor')">👥 VENDEDORES</button>
+        </div>
+    </div>
     
-    <div class="card" style="margin-top:20px;">
-        <h3>Resumen de Cobro (Hoy)</h3>
+    <div class="card">
+        <h3 style="margin-top:0;">Corte de Caja (Hoy)</h3>
+        <p style="font-size:12px; color:#777; margin-bottom:15px;">Dinero que debes cobrar a tus vendedores:</p>
         <div id="admin-finanzas-lista">
             </div>
     </div>
-
-    <button class="btn-blue" onclick="showSection('view-inventario')">📦 Ver Stock Global</button>
-    <button class="btn-outline" onclick="showSection('view-add-vendedor')">➕ Nuevo Vendedor</button>
 </div>
 
 <div class="container" id="view-vendedor" style="display:none">
     <div class="card" style="text-align:center;">
         <h2 id="vend-name" style="margin:0; color:var(--primary);">Vendedor</h2>
-        
         <div class="finanzas-box">
-            <div style="margin-bottom:15px;">
-                <div class="label-fin">💵 Total Ventas (Bruto)</div>
-                <div class="money" id="v-total-bruto">$0.00</div>
-            </div>
-            <div style="display:flex; justify-content: space-around; border-top:1px solid #fdd835; padding-top:10px;">
-                <div>
-                    <div class="label-fin">🎁 Mi Comisión</div>
-                    <div class="money txt-green" id="v-mi-comision">$0.00</div>
-                </div>
-                <div>
-                    <div class="label-fin">🤝 A Entregar</div>
-                    <div class="money txt-red" id="v-a-entregar">$0.00</div>
-                </div>
+            <div class="label-fin">💵 Mis Ventas Brutas</div>
+            <div class="money" id="v-total-bruto">$0.00</div>
+            <div style="display:flex; justify-content: space-around; margin-top:10px; border-top:1px solid #ddd; padding-top:10px;">
+                <div><div class="label-fin">Comisión</div><div class="money txt-green" id="v-mi-comision">$0.00</div></div>
+                <div><div class="label-fin">A Entregar</div><div class="money txt-red" id="v-a-entregar">$0.00</div></div>
             </div>
         </div>
-
-        <button class="btn-green" style="height:70px; margin-top:20px; font-size:18px;" onclick="showSection('view-vender-pin')">💸 VENDER PIN</button>
-        
-        <div style="margin-top:20px;">
-            <small id="v-stock-label" style="color:#888;">Stock: 0 fichas</small>
-        </div>
-        
-        <button class="btn-outline" onclick="handleLogout()" style="margin-top:40px;">Cerrar Sesión</button>
+        <button class="btn-green" style="height:70px; margin-top:20px;" onclick="showSection('view-vender-pin')">💸 VENDER PIN</button>
+        <p id="v-stock-label" style="font-size:13px; color:#888; margin-top:15px;">Stock: 0 fichas</p>
+        <button class="btn-outline" onclick="handleLogout()">Cerrar Sesión</button>
     </div>
 </div>
 
 <div class="container" id="view-scan" style="display:none">
     <div class="card">
         <h3>Cargar Fichas</h3>
-        <select id="scan-vendedor-select" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px;"></select>
-        <select id="scan-precio" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px;">
-            <option value="10">Fichas de $10</option>
-            <option value="25">Fichas de $25</option>
-        </select>
-        <textarea id="texto-pins-batch" placeholder="Pega los códigos aquí..." style="width:100%; height:100px; padding:10px; border-radius:10px; border:1px solid #ddd;"></textarea>
-        <button class="btn-primary" onclick="processTextBatch()">CARGAR LISTA</button>
-        <button class="btn-outline" onclick="showSection('view-admin')">Cancelar</button>
+        <label>Vendedor:</label><select id="scan-vendedor-select"></select>
+        <label>Precio:</label><select id="scan-precio"><option value="10">Fichas $10</option><option value="25">Fichas $25</option></select>
+        <textarea id="texto-pins-batch" placeholder="Pega aquí los códigos..."></textarea>
+        <button class="btn-primary" onclick="processTextBatch()">GUARDAR CÓDIGOS</button>
+        <button class="btn-outline" onclick="showSection('view-admin')">Volver al Panel</button>
     </div>
 </div>
 
 <div class="container" id="view-vender-pin" style="display:none">
     <div class="card">
-        <h3>Registrar Venta</h3>
-        <input id="input-pin-vender" placeholder="Escribe el PIN" style="width:100%; padding:15px; font-size:24px; text-align:center; border-radius:10px; border:2px solid var(--green);">
-        <button class="btn-green" onclick="confirmVenta()" style="margin-top:15px;">CONFIRMAR ENTREGA</button>
-        <button class="btn-outline" onclick="showSection('view-vendedor')">Volver</button>
+        <h3>Entregar Ficha</h3>
+        <input id="input-pin-vender" placeholder="Escribe el PIN aquí" style="font-size:24px; text-align:center;">
+        <button class="btn-green" onclick="confirmVenta()">REGISTRAR VENTA</button>
+        <button class="btn-outline" onclick="showSection('view-vendedor')">Cancelar</button>
+    </div>
+</div>
+
+<div class="container" id="view-inventario" style="display:none">
+    <div class="card">
+        <h3>Stock Disponible</h3>
+        <table id="tabla-inventario">
+            <thead><tr><th>Vendedor</th><th>$10</th><th>$25</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button class="btn-outline" onclick="showSection('view-admin')" style="margin-top:20px;">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-add-vendedor" style="display:none">
+    <div class="card">
+        <h3>Nuevo Vendedor</h3>
+        <input id="new-vend-name" placeholder="Nombre">
+        <input id="new-vend-email" type="email" placeholder="Correo">
+        <input id="new-vend-pass" type="password" placeholder="Contraseña">
+        <button class="btn-primary" onclick="addNewVendedor()">REGISTRAR VENDEDOR</button>
+        <button class="btn-outline" onclick="showSection('view-admin')">Volver</button>
     </div>
 </div>
 
 <script>
 // --- CONFIGURACIÓN ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w",
-    authDomain: "safriapp-2f1db.firebaseapp.com",
-    projectId: "safriapp-2f1db"
-};
+const firebaseConfig = { apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w", authDomain: "safriapp-2f1db.firebaseapp.com", projectId: "safriapp-2f1db" };
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const auth = firebase.auth(); const db = firebase.firestore();
 
 let currentUser = null;
-const PORCENTAJE_COMISION = 0.15; // 15% de comisión
+const PORCENTAJE_COMISION = 0.15;
 
 function showSection(id) {
     document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
     document.getElementById(id).style.display = 'block';
     if(id === 'view-admin') loadSocioFinanzas();
     if(id === 'view-vendedor') updateVendedorFinanzas();
+    if(id === 'view-inventario') loadInventario();
 }
 
-// --- AUTH ---
 auth.onAuthStateChanged(user => {
     if (user) {
         db.collection("usuarios").doc(user.uid).get().then(doc => {
@@ -156,34 +155,27 @@ auth.onAuthStateChanged(user => {
     } else { showSection('view-login'); }
 });
 
-// --- FINANZAS VENDEDOR ---
-async function updateVendedorFinanzas() {
-    if(!currentUser) return;
-    document.getElementById('vend-name').innerText = currentUser.nombre;
-    const hoy = new Date(); hoy.setHours(0,0,0,0);
+// --- LÓGICA DE CARGA ---
+async function processTextBatch() {
+    const text = document.getElementById('texto-pins-batch').value;
+    const vend = document.getElementById('scan-vendedor-select').value;
+    const precio = parseInt(document.getElementById('scan-precio').value);
+    const pins = text.match(/[a-zA-Z0-9]{4,10}/g) || [];
+    const filtrados = pins.filter(p => p.toLowerCase() !== 'pin');
 
-    const vSnap = await db.collection("ventas")
-        .where("vendedor", "==", currentUser.nombre)
-        .where("fecha", ">=", hoy).get();
-    
-    let bruto = 0;
-    vSnap.forEach(d => bruto += d.data().precio);
-
-    const comision = bruto * PORCENTAJE_COMISION;
-    const netoAEntregar = bruto - comision;
-
-    document.getElementById('v-total-bruto').innerText = "$" + bruto.toFixed(2);
-    document.getElementById('v-mi-comision').innerText = "$" + comision.toFixed(2);
-    document.getElementById('v-a-entregar').innerText = "$" + netoAEntregar.toFixed(2);
-
-    const sSnap = await db.collection("fichas").where("vendedor", "==", currentUser.nombre).where("estado", "==", "disponible").get();
-    document.getElementById('v-stock-label').innerText = "Stock: " + sSnap.size + " fichas";
+    if(filtrados.length === 0) return alert("Pega los códigos primero.");
+    const batch = db.batch();
+    filtrados.forEach(p => batch.set(db.collection("fichas").doc(), { pin: p, vendedor: vend, precio: precio, estado: "disponible", fecha: new Date() }));
+    await batch.commit();
+    alert("✅ " + filtrados.length + " fichas cargadas.");
+    document.getElementById('texto-pins-batch').value = "";
+    showSection('view-admin');
 }
 
-// --- FINANZAS SOCIO (ADMIN) ---
+// --- LÓGICA DE FINANZAS ---
 async function loadSocioFinanzas() {
     const contenedor = document.getElementById('admin-finanzas-lista');
-    contenedor.innerHTML = "Cargando...";
+    contenedor.innerHTML = "Actualizando...";
     const hoy = new Date(); hoy.setHours(0,0,0,0);
 
     const [vSnap, uSnap] = await Promise.all([
@@ -200,58 +192,45 @@ async function loadSocioFinanzas() {
 
     contenedor.innerHTML = "";
     uSnap.forEach(u => {
-        const nombre = u.data().nombre;
-        const bruto = stats[nombre] || 0;
-        const comision = bruto * PORCENTAJE_COMISION;
-        const neto = bruto - comision;
-
+        const n = u.data().nombre;
+        const bruto = stats[n] || 0;
+        const neto = bruto - (bruto * PORCENTAJE_COMISION);
         contenedor.innerHTML += `
             <div style="border-bottom:1px solid #eee; padding:10px 0;">
                 <div style="display:flex; justify-content:space-between;">
-                    <b>${nombre}</b>
-                    <span class="txt-red">Recibir: $${neto.toFixed(2)}</span>
+                    <b>${n}</b>
+                    <span class="txt-red">Recoger: $${neto.toFixed(2)}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; color:#777;">
-                    <span>Vendido: $${bruto.toFixed(2)}</span>
-                    <span>Comisión: $${comision.toFixed(2)}</span>
-                </div>
-            </div>
-        `;
+                <div style="font-size:12px; color:#777;">Vendido: $${bruto.toFixed(2)}</div>
+            </div>`;
     });
 }
 
-// --- PROCESOS GENERALES ---
-async function confirmVenta() {
-    const pin = document.getElementById('input-pin-vender').value.trim();
-    if(!pin) return;
-    const snap = await db.collection("fichas").where("pin", "==", pin).where("vendedor", "==", currentUser.nombre).get();
-    if(snap.empty) return alert("PIN no disponible en tu stock.");
-    
-    const docF = snap.docs[0];
-    await docF.ref.update({ estado: "vendida", fechaVenta: new Date() });
-    await db.collection("ventas").add({ pin: pin, vendedor: currentUser.nombre, precio: docF.data().precio, fecha: new Date() });
-    
-    alert("✅ Venta Exitosa");
-    document.getElementById('input-pin-vender').value = "";
-    showSection('view-vendedor');
+async function updateVendedorFinanzas() {
+    if(!currentUser) return;
+    document.getElementById('vend-name').innerText = currentUser.nombre;
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const vSnap = await db.collection("ventas").where("vendedor", "==", currentUser.nombre).where("fecha", ">=", hoy).get();
+    let bruto = 0; vSnap.forEach(d => bruto += d.data().precio);
+    const com = bruto * PORCENTAJE_COMISION;
+    document.getElementById('v-total-bruto').innerText = "$" + bruto.toFixed(2);
+    document.getElementById('v-mi-comision').innerText = "$" + com.toFixed(2);
+    document.getElementById('v-a-entregar').innerText = "$" + (bruto - com).toFixed(2);
 }
 
-async function processTextBatch() {
-    const text = document.getElementById('texto-pins-batch').value;
-    const vend = document.getElementById('scan-vendedor-select').value;
-    const precio = parseInt(document.getElementById('scan-precio').value);
-    const pins = text.match(/[a-zA-Z0-9]{4,10}/g) || [];
-    const filtrados = pins.filter(p => p.toLowerCase() !== 'pin');
-
-    if(filtrados.length === 0) return alert("No se hallaron códigos.");
-    
-    const batch = db.batch();
-    filtrados.forEach(p => batch.set(db.collection("fichas").doc(), { pin: p, vendedor: vend, precio: precio, estado: "disponible", fecha: new Date() }));
-    await batch.commit();
-    alert("Cargados: " + filtrados.length);
-    showSection('view-admin');
+async function loadInventario() {
+    const tbody = document.querySelector('#tabla-inventario tbody');
+    tbody.innerHTML = "";
+    const snap = await db.collection("fichas").where("estado", "==", "disponible").get();
+    let st = {};
+    snap.forEach(f => {
+        let d = f.data(); if(!st[d.vendedor]) st[d.vendedor] = {s10:0, s25:0};
+        if(d.precio == 10) st[d.vendedor].s10++; else st[d.vendedor].s25++;
+    });
+    for(let v in st) tbody.innerHTML += `<tr><td>${v}</td><td>${st[v].s10}</td><td>${st[v].s25}</td></tr>`;
 }
 
+// --- OTROS ---
 function fillVendedoresDropdown() {
     db.collection("usuarios").where("tipo", "==", "vendedor").get().then(snap => {
         const sel = document.getElementById('scan-vendedor-select');
@@ -263,11 +242,26 @@ function fillVendedoresDropdown() {
         });
     });
 }
-
-function handleLogin() {
-    auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value);
+async function confirmVenta() {
+    const pin = document.getElementById('input-pin-vender').value.trim();
+    const snap = await db.collection("fichas").where("pin", "==", pin).where("vendedor", "==", currentUser.nombre).where("estado", "==", "disponible").get();
+    if(snap.empty) return alert("PIN no disponible.");
+    const docF = snap.docs[0];
+    await docF.ref.update({ estado: "vendida", fechaVenta: new Date() });
+    await db.collection("ventas").add({ pin: pin, vendedor: currentUser.nombre, precio: docF.data().precio, fecha: new Date() });
+    alert("✅ Vendido"); document.getElementById('input-pin-vender').value = ""; showSection('view-vendedor');
 }
+function handleLogin() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value); }
 function handleLogout() { auth.signOut(); }
+function addNewVendedor() {
+    const n = document.getElementById('new-vend-name').value;
+    const e = document.getElementById('new-vend-email').value;
+    const p = document.getElementById('new-vend-pass').value;
+    auth.createUserWithEmailAndPassword(e, p).then(res => {
+        db.collection("usuarios").doc(res.user.uid).set({ nombre: n, tipo: "vendedor" });
+        alert("¡Vendedor creado!"); showSection('view-admin');
+    });
+}
 </script>
 </body>
 </html>
