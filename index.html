@@ -1,122 +1,83 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Fichas</title>
 
-<title>SAFRI PRO 🔥</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 
-<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<style>
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#1e1b4b,#0ea5e9);
+color:white;
+margin:0;
+}
 
+.container{
+padding:20px;
+max-width:900px;
+margin:auto;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:12px;
+margin-bottom:20px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:10px;
+border:none;
+}
+
+button{
+width:100%;
+padding:15px;
+margin-top:10px;
+border:none;
+border-radius:12px;
+background:#22c55e;
+color:white;
+font-size:16px;
+}
+
+</style>
 </head>
 
 <body>
 
-<!-- SPLASH -->
-<div id="splash">
-<img src="logo.png" class="logoSplash">
-<h1>SAFRI PRO 🔥</h1>
-</div>
+<div class="container">
 
-<!-- LOGIN -->
-<div class="welcome" id="loginBox">
-<div class="logoBox">
-<img src="logo.png" class="logo">
-<h1>SAFRI</h1>
+<div class="card">
+<h2>Vendedor</h2>
+<input id="vendedor" placeholder="Nombre del vendedor">
+<button onclick="guardarVendedor()">Guardar</button>
 </div>
 
 <div class="card">
-<input id="email" placeholder="Correo">
-<input id="password" type="password" placeholder="Contraseña">
-<button onclick="login()">Entrar</button>
-<button onclick="mostrarRegistro()">Crear cuenta</button>
-</div>
+<h2>Escanear QR (20 horas)</h2>
+<div id="reader"></div>
 </div>
 
-<!-- REGISTRO -->
-<div class="container" id="registroBox" style="display:none">
 <div class="card">
-<input id="nombre" placeholder="Nombre">
-<input id="emailR" placeholder="Correo">
-<input id="passR" type="password" placeholder="Contraseña">
-
-<select id="tipoUser">
-<option value="vendedor">Vendedor</option>
-<option value="admin">Socio</option>
-</select>
-
-<button onclick="registrar()">Crear cuenta</button>
-<button onclick="volverLogin()">Volver</button>
-</div>
+<h2>Ingresar PIN manual (10 horas)</h2>
+<input id="pinManual" placeholder="Escribe el PIN">
+<button onclick="registrarManual()">Registrar PIN</button>
 </div>
 
-<!-- MENU -->
-<div id="menu" class="simpleMenu" style="display:none">
-<button class="bigBtn" onclick="ver('cargar')" id="btnAdmin">📥 Cargar fichas</button>
-<button class="bigBtn" onclick="ver('vender')">💸 Vender ficha</button>
-<button class="bigBtn" onclick="ver('stats')">💰 Mis ganancias</button>
-<button class="bigBtn" onclick="ver('adminStats')" id="btnAdmin2">📊 Inventario</button>
-<button class="logoutBtn" onclick="logout()">Salir</button>
-</div>
-
-<!-- CARGAR -->
-<div class="container" id="cargar" style="display:none">
-<div class="card">
-
-<h3>Pegar fichas</h3>
-<textarea id="pins"></textarea>
-
-<input type="file" id="filePins">
-<button onclick="cargarArchivo()">Cargar TXT</button>
-
-<select id="vendedorSelect"></select>
-
-<select id="precio">
-<option value="10">$10</option>
-<option value="25">$25</option>
-</select>
-
-<button onclick="guardar()">Guardar fichas</button>
-
-</div>
-</div>
-
-<!-- VENDER -->
-<div class="container" id="vender" style="display:none">
-<div class="card">
-
-<h3>Vender ficha</h3>
-
-<input id="pinVenta" placeholder="Escribe el PIN">
-<button onclick="venderPin()">Registrar venta</button>
-
-</div>
-</div>
-
-<!-- STATS -->
-<div class="container" id="stats" style="display:none">
-<div class="card">
-<pre id="statsContent"></pre>
-</div>
-</div>
-
-<!-- ADMIN -->
-<div class="container" id="adminStats" style="display:none">
-<div class="card">
-<pre id="adminContent"></pre>
-</div>
 </div>
 
 <script>
 
-// SPLASH
-setTimeout(()=>{ splash.style.display="none"; },2000);
-
-// FIREBASE
+// 🔥 FIREBASE (TU CONFIG)
 const firebaseConfig = {
  apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w",
  authDomain: "safriapp-2f1db.firebaseapp.com",
@@ -124,217 +85,74 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.firestore();
 
-let usuarioNombre="";
-let tipoActual="";
-
-// LOGIN
-function login(){
-auth.signInWithEmailAndPassword(email.value, password.value)
-.then(res=>cargarDatos(res.user.uid))
-.catch(err=>alert(err.message));
+// 👤 GUARDAR VENDEDOR
+function guardarVendedor(){
+  let v = document.getElementById("vendedor").value;
+  localStorage.setItem("vendedor", v);
+  alert("Vendedor guardado");
 }
 
-// REGISTRO
-function registrar(){
-auth.createUserWithEmailAndPassword(emailR.value, passR.value)
-.then(res=>{
- db.collection("usuarios").doc(res.user.uid).set({
-  nombre:nombre.value,
-  tipo:tipoUser.value
- });
- alert("Cuenta creada");
- volverLogin();
-});
-}
+// 📷 ESCANEAR QR
+function onScanSuccess(decodedText) {
 
-// CARGAR USUARIO
-function cargarDatos(uid){
-db.collection("usuarios").doc(uid).get().then(doc=>{
+  let vendedor = localStorage.getItem("vendedor") || "sin_nombre";
 
- if(!doc.exists){
-  alert("No existe usuario");
-  return;
- }
+  let pin = decodedText.trim();
 
- let d=doc.data();
- usuarioNombre=d.nombre;
- tipoActual=d.tipo;
-
- loginBox.style.display="none";
- menu.style.display="flex";
-
- if(tipoActual!="admin"){
-  btnAdmin.style.display="none";
-  btnAdmin2.style.display="none";
- }
-
- cargarVendedores();
-});
-}
-
-// NAV
-function ver(v){
-["cargar","vender","stats","adminStats"].forEach(x=>{
- document.getElementById(x).style.display="none";
-});
-document.getElementById(v).style.display="block";
-
-if(v==="stats") cargarStats();
-if(v==="adminStats") verInventario();
-}
-
-// VENDEDORES
-function cargarVendedores(){
-db.collection("usuarios").where("tipo","==","vendedor").get().then(snap=>{
- vendedorSelect.innerHTML="";
- snap.forEach(doc=>{
-  let op=document.createElement("option");
-  op.text=doc.data().nombre;
-  vendedorSelect.add(op);
- });
-});
-}
-
-// TXT
-function cargarArchivo(){
-let file=filePins.files[0];
-let reader=new FileReader();
-reader.onload=e=>pins.value=e.target.result;
-reader.readAsText(file);
-}
-
-// GUARDAR FICHAS
-function guardar(){
-pins.value.split("\n").forEach(p=>{
- p=p.trim();
- if(p!=""){
-  db.collection("fichas").add({
-   pin:p,
-   vendedor:vendedorSelect.value,
-   precio:parseInt(precio.value),
-   estado:"disponible",
-   fecha:new Date()
-  });
- }
-});
-alert("Fichas cargadas");
-}
-
-// VENDER
-function venderPin(){
-
-let pin=pinVenta.value;
-
-db.collection("fichas")
-.where("pin","==",pin)
-.get()
-.then(snap=>{
-
- if(snap.empty){
-  alert("PIN no existe");
-  return;
- }
-
- snap.forEach(doc=>{
-
-  let d=doc.data();
-
-  if(d.estado==="vendida"){
-   alert("Ya fue vendida");
-   return;
+  let match = pin.match(/[a-z0-9]{5,8}/i);
+  if(!match){
+    alert("PIN no válido");
+    return;
   }
 
-  doc.ref.update({estado:"vendida"});
+  pin = match[0];
+
+  guardarVenta(pin, vendedor);
+}
+
+// ✍️ REGISTRO MANUAL
+function registrarManual(){
+
+  let vendedor = localStorage.getItem("vendedor") || "sin_nombre";
+  let pin = document.getElementById("pinManual").value.trim();
+
+  let match = pin.match(/[a-z0-9]{5,8}/i);
+  if(!match){
+    alert("PIN no válido");
+    return;
+  }
+
+  pin = match[0];
+
+  guardarVenta(pin, vendedor);
+}
+
+// 💾 GUARDAR EN FIREBASE
+function guardarVenta(pin, vendedor){
 
   db.collection("ventas").add({
-   pin:pin,
-   vendedor:usuarioNombre,
-   precio:d.precio,
-   fecha:new Date()
+    pin: pin,
+    vendedor: vendedor,
+    fecha: new Date()
   });
 
- });
-
- alert("Venta registrada 🔥");
- pinVenta.value="";
-});
+  alert("Registrado: " + pin);
 }
 
-// STATS
-function cargarStats(){
-db.collection("ventas").get().then(snap=>{
- let total=0;
+// 🚀 INICIAR CAMARA
+const html5QrCode = new Html5Qrcode("reader");
 
- snap.forEach(doc=>{
-  let v=doc.data();
-  if(v.vendedor===usuarioNombre){
-   total+=v.precio;
+Html5Qrcode.getCameras().then(devices => {
+  if(devices.length){
+    html5QrCode.start(
+      devices[0].id,
+      { fps: 10, qrbox: 250 },
+      onScanSuccess
+    );
   }
- });
-
- statsContent.textContent=
- "Vendido: $"+total+
- "\nGanancia: $"+(total*0.15).toFixed(2);
 });
-}
-
-// INVENTARIO
-function verInventario(){
-db.collection("fichas").get().then(snap=>{
-
- let data={};
-
- snap.forEach(doc=>{
-  let v=doc.data();
-
-  if(!data[v.vendedor]){
-   data[v.vendedor]={total:0,vendidas:0};
-  }
-
-  data[v.vendedor].total++;
-
-  if(v.estado==="vendida"){
-   data[v.vendedor].vendidas++;
-  }
- });
-
- let txt="";
-
- for(let v in data){
-  let disp=data[v].total-data[v].vendidas;
-
-  txt+=`${v}
-Total: ${data[v].total}
-Vendidas: ${data[v].vendidas}
-Disponibles: ${disp}
-
-`;
- }
-
- adminContent.textContent=txt;
-
-});
-}
-
-// LOGOUT
-function logout(){
-auth.signOut();
-location.reload();
-}
-
-// VISTAS
-function mostrarRegistro(){
-loginBox.style.display="none";
-registroBox.style.display="block";
-}
-
-function volverLogin(){
-loginBox.style.display="flex";
-registroBox.style.display="none";
-}
 
 </script>
 
