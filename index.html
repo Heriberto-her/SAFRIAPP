@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAFRI PRO v4.2 🔥</title>
+    <title>SAFRI PRO v4.3 🔥</title>
     
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -24,13 +24,10 @@
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
         .stat-box { background: #f8f9fa; padding: 12px; border-radius: 10px; border-left: 4px solid var(--primary); text-align: left; }
         
-        /* Tabla de Vendedores */
-        .vendedores-list { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        .vendedores-list th { background: #eee; padding: 10px; text-align: left; border-radius: 5px 0 0 5px; }
-        .vendedores-list td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .vendedores-list { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .vendedores-list td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
         
-        .mikrotik-console { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; text-align: left; height: 180px; overflow-y: auto; font-size: 12px; }
-        #loadingOverlay { display: none; margin-top: 15px; }
+        #loadingOverlay { display: none; margin-top: 15px; background: #fff3e0; padding: 15px; border-radius: 10px; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -43,13 +40,12 @@
 
 <div class="container" id="view-login" style="display:none">
     <div class="card">
-        <h2 id="login-title">Bienvenido</h2>
-        <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
-            <input id="login-email" type="email" name="email" placeholder="Correo" autocomplete="username" required>
-            <input id="login-pass" type="password" name="password" placeholder="Contraseña" autocomplete="current-password" required>
+        <h2>Bienvenido</h2>
+        <form onsubmit="event.preventDefault(); handleLogin();">
+            <input id="login-email" type="email" placeholder="Correo" autocomplete="username" required>
+            <input id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password" required>
             <button type="submit">Entrar</button>
         </form>
-        <span onclick="resetPassword()" style="color:var(--blue); font-size:14px; cursor:pointer; margin-top:15px; display:inline-block;">¿Olvidaste tu contraseña?</span>
     </div>
 </div>
 
@@ -59,7 +55,6 @@
         <button class="bigBtn" onclick="showSection('view-scan')">📥 ESCANEAR HOJA</button>
         <button class="bigBtn" onclick="showSection('view-lista-vendedores')" style="background:var(--blue)">👥 LISTA DE VENDEDORES</button>
         <button class="bigBtn" onclick="showSection('view-add-vendedor')" style="background:#555">➕ REGISTRAR NUEVO</button>
-        <button class="bigBtn" onclick="showSection('view-mikrotik')" style="background:var(--green)">📟 MIKROTIK LIVE</button>
         <button class="bigBtn" onclick="showSection('view-finanzas')" style="background:#9b59b6">💰 CORTE DE CAJA</button>
         <button onclick="handleLogout()" style="background:#e74c3c; margin-top:20px;">Cerrar Sesión</button>
     </div>
@@ -67,18 +62,26 @@
 
 <div class="container" id="view-lista-vendedores" style="display:none">
     <div class="card">
-        <h3>Vendedores Registrados</h3>
+        <h3>Vendedores y Ventas</h3>
         <table class="vendedores-list">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Ventas</th>
-                    <th>Monto</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-vendedores-body">
-                </tbody>
+            <tbody id="tabla-vendedores-body"></tbody>
         </table>
+        <button onclick="showSection('view-admin')" style="background:#777; margin-top:20px;">Volver</button>
+    </div>
+</div>
+
+<div class="container" id="view-scan" style="display:none">
+    <div class="card">
+        <h3>Escáner de Fichas</h3>
+        <p style="font-size:12px; color:#666;">Selecciona a quién asignar estas fichas:</p>
+        <select id="scan-vendedor-select"></select>
+        <button onclick="document.getElementById('file-input').click()" style="background:var(--green); margin-top:10px;">📸 TOMAR FOTO</button>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="processOCR()">
+        
+        <div id="loadingOverlay">
+            <div class="spinner"></div>
+            <div id="scan-progress" style="margin-top:10px; font-weight:bold;">Iniciando cámara...</div>
+        </div>
         <button onclick="showSection('view-admin')" style="background:#777; margin-top:20px;">Volver</button>
     </div>
 </div>
@@ -88,63 +91,24 @@
         <h2 id="vend-name">Vendedor</h2>
         <div class="stats-grid">
             <div class="stat-box"><small>Fichas</small><b id="v-count">0</b></div>
-            <div class="stat-box"><small>Comisión</small><b id="v-comision">$0.00</b></div>
+            <div class="stat-box"><small>Mi Ganancia</small><b id="v-comision">$0.00</b></div>
         </div>
         <button class="bigBtn" onclick="showSection('view-vender-pin')">💸 VENDER PIN</button>
         <button onclick="handleLogout()" style="background:#e74c3c; margin-top:20px;">Cerrar Sesión</button>
     </div>
 </div>
 
-<div class="container" id="view-mikrotik" style="display:none">
-    <div class="card">
-        <h3>Mikrotik Live (443)</h3>
-        <div class="mikrotik-console" id="mk-data">> Sin conexión.</div>
-        <button onclick="fetchMikrotik()" style="background:var(--green); margin-top:10px;">🔄 ACTUALIZAR</button>
-        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
-    </div>
-</div>
-
 <div class="container" id="view-vender-pin" style="display:none">
     <div class="card">
         <h3>Registrar Venta</h3>
-        <input id="input-pin-vender" placeholder="PIN de la ficha">
-        <button onclick="confirmVenta()" style="background:var(--green)">Confirmar</button>
+        <input id="input-pin-vender" placeholder="Ingresa el PIN">
+        <button onclick="confirmVenta()" style="background:var(--green)">Confirmar Entrega</button>
         <button onclick="showSection('view-vendedor')" style="background:#777">Volver</button>
     </div>
 </div>
 
-<div class="container" id="view-scan" style="display:none">
-    <div class="card">
-        <h3>Cargar Fichas</h3>
-        <select id="scan-vendedor-select"></select>
-        <button onclick="document.getElementById('file-input').click()" style="background:var(--green)">📸 FOTO</button>
-        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="processOCR()">
-        <div id="loadingOverlay"><div class="spinner"></div><div id="scan-progress">...</div></div>
-        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
-    </div>
-</div>
-
-<div class="container" id="view-finanzas" style="display:none">
-    <div class="card">
-        <h3>Finanzas Globales</h3>
-        <div id="finanzas-data"></div>
-        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
-    </div>
-</div>
-
-<div class="container" id="view-add-vendedor" style="display:none">
-    <div class="card">
-        <h3>Registrar Vendedor</h3>
-        <input id="new-vend-name" placeholder="Nombre">
-        <input id="new-vend-email" placeholder="Correo">
-        <input id="new-vend-pass" type="password" placeholder="Pass">
-        <button onclick="addNewVendedor()">Crear</button>
-        <button onclick="showSection('view-admin')" style="background:#777">Volver</button>
-    </div>
-</div>
-
 <script>
-// --- FIREBASE CONFIG ---
+// --- FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyBAx5v07KT6gNgK1k04VEPGiJ_hsoIcX2w",
     authDomain: "safriapp-2f1db.firebaseapp.com",
@@ -156,147 +120,135 @@ const db = firebase.firestore();
 
 let currentUser = null;
 
+// --- NAVEGACIÓN ---
 function showSection(id) {
     document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
     document.getElementById(id).style.display = 'block';
     if(id === 'view-lista-vendedores') loadVendedoresList();
-    if(id === 'view-finanzas') updateAdminFinanzas();
     if(id === 'view-vendedor') updateVendedorStats();
+    if(id === 'view-admin') fillVendedoresDropdown();
 }
 
-// --- LOGIN ---
-function handleLogin() {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-pass').value;
-    auth.signInWithEmailAndPassword(e, p).then(() => localStorage.setItem('safri_user_email', e)).catch(err => alert("Error"));
-}
-
+// --- AUTH ---
 auth.onAuthStateChanged(user => {
     document.getElementById('splash').style.display = 'none';
     if (user) {
         db.collection("usuarios").doc(user.uid).get().then(doc => {
             currentUser = doc.data();
+            currentUser.uid = user.uid;
             if(currentUser.tipo === 'admin') showSection('view-admin');
             else showSection('view-vendedor');
         });
     } else { showSection('view-login'); }
 });
 
-// --- LISTA DE VENDEDORES CON VENTAS ---
+function handleLogin() {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-pass').value;
+    auth.signInWithEmailAndPassword(e, p).catch(err => alert("Error: " + err.message));
+}
+
+function handleLogout() { auth.signOut(); }
+
+// --- ESCÁNER CORREGIDO ---
+async function processOCR() {
+    const file = document.getElementById('file-input').files[0];
+    const vSelected = document.getElementById('scan-vendedor-select').value;
+    if(!file) return;
+
+    document.getElementById('loadingOverlay').style.display = 'block';
+    const progress = document.getElementById('scan-progress');
+    progress.innerText = "Leyendo imagen...";
+
+    try {
+        const worker = await Tesseract.createWorker({
+            logger: m => { if(m.status === 'recognizing text') progress.innerText = `Procesando: ${(m.progress*100).toFixed(0)}%`; }
+        });
+        await worker.loadLanguage('eng');
+        await worker.initialize('eng');
+        const { data: { text } } = await worker.recognize(file);
+        await worker.terminate();
+
+        const pinRegex = /PIN:\s*([a-zA-Z0-9]+)/g;
+        const priceRegex = /(10|25)\.00/g;
+        let pins = [], prices = [], match;
+
+        while ((match = pinRegex.exec(text)) !== null) pins.push(match[1]);
+        while ((match = priceRegex.exec(text)) !== null) prices.push(parseInt(match[1]));
+
+        if(pins.length === 0) {
+            alert("No se detectaron pines. Asegúrate que la foto sea clara.");
+        } else {
+            const batch = db.batch();
+            pins.forEach((p, i) => {
+                const ref = db.collection("fichas").doc();
+                batch.set(ref, {
+                    pin: p,
+                    vendedor: vSelected,
+                    precio: prices[i] || prices[0] || 25,
+                    estado: "disponible",
+                    fecha: new Date()
+                });
+            });
+            await batch.commit();
+            alert(`✅ Se cargaron ${pins.length} fichas con éxito.`);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error al procesar la imagen.");
+    }
+    document.getElementById('loadingOverlay').style.display = 'none';
+    showSection('view-admin');
+}
+
+// --- VENDEDORES Y VENTAS ---
 async function loadVendedoresList() {
     const tbody = document.getElementById('tabla-vendedores-body');
-    tbody.innerHTML = "Cargando...";
+    tbody.innerHTML = "<tr><td>Cargando datos...</td></tr>";
     
-    // Obtener todos los vendedores
-    const usuariosSnap = await db.collection("usuarios").where("tipo", "==", "vendedor").get();
+    const usersSnap = await db.collection("usuarios").where("tipo", "==", "vendedor").get();
     const ventasSnap = await db.collection("ventas").get();
     
-    // Agrupar ventas por nombre de vendedor
-    let ventasPorVendedor = {};
+    let stats = {};
     ventasSnap.forEach(v => {
         const d = v.data();
-        if(!ventasPorVendedor[d.vendedor]) {
-            ventasPorVendedor[d.vendedor] = { cant: 0, monto: 0 };
-        }
-        ventasPorVendedor[d.vendedor].cant++;
-        ventasPorVendedor[d.vendedor].monto += d.precio;
+        if(!stats[d.vendedor]) stats[d.vendedor] = { c: 0, m: 0 };
+        stats[d.vendedor].c++;
+        stats[d.vendedor].m += d.precio;
     });
 
     tbody.innerHTML = "";
-    usuariosSnap.forEach(u => {
+    usersSnap.forEach(u => {
         const user = u.data();
-        const stats = ventasPorVendedor[user.nombre] || { cant: 0, monto: 0 };
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><b>${user.nombre}</b></td>
-            <td>${stats.cant} fichas</td>
-            <td>$${stats.monto.toFixed(2)}</td>
+        const s = stats[user.nombre] || { c: 0, m: 0 };
+        tbody.innerHTML += `
+            <tr>
+                <td><b>${user.nombre}</b><br><small>${s.c} ventas</small></td>
+                <td style="text-align:right"><b>$${s.m.toFixed(2)}</b></td>
+            </tr>
         `;
-        tbody.appendChild(tr);
     });
 }
 
-// --- VENTA ---
 async function confirmVenta() {
     const pin = document.getElementById('input-pin-vender').value.trim();
+    if(!pin) return;
     const snap = await db.collection("fichas").where("pin", "==", pin).get();
-    if(snap.empty) return alert("PIN no existe");
+    
+    if(snap.empty) return alert("❌ PIN incorrecto o no existe.");
     const docF = snap.docs[0];
-    if(docF.data().estado === "vendida") return alert("Ya vendida");
+    if(docF.data().estado === "vendida") return alert("⚠️ Ya fue vendida.");
 
     await docF.ref.update({ estado: "vendida", fechaVenta: new Date() });
     await db.collection("ventas").add({
-        pin: pin, vendedor: currentUser.nombre, precio: docF.data().precio, fecha: new Date()
+        pin: pin,
+        vendedor: currentUser.nombre,
+        precio: docF.data().precio,
+        fecha: new Date()
     });
-    alert("¡Vendido!");
+    alert("✅ Venta registrada");
     document.getElementById('input-pin-vender').value = "";
     updateVendedorStats();
-}
-
-// --- MIKROTIK (Captura SSL 443) ---
-async function fetchMikrotik() {
-    const MK_IP = "TU_IP_PUBLICA"; 
-    const MK_USER = "admin";
-    const MK_PASS = "PASS";
-    const consoleBox = document.getElementById('mk-data');
-    consoleBox.innerHTML = "> Conectando a https puerto 443...";
-    try {
-        const res = await fetch(`https://${MK_IP}:443/rest/ip/hotspot/active`, {
-            headers: { 'Authorization': 'Basic ' + btoa(MK_USER + ":" + MK_PASS) }
-        });
-        const data = await res.json();
-        let out = "";
-        data.forEach(u => out += `👤 ${u.user} (${u.uptime})<br>`);
-        consoleBox.innerHTML = out || "No hay usuarios activos.";
-    } catch (e) { consoleBox.innerHTML = "Error SSL. Abre la IP en otra pestaña y acepta el riesgo."; }
-}
-
-// --- SOCIO ---
-function addNewVendedor() {
-    const n = document.getElementById('new-vend-name').value;
-    const e = document.getElementById('new-vend-email').value;
-    const p = document.getElementById('new-vend-pass').value;
-    auth.createUserWithEmailAndPassword(e, p).then(res => {
-        db.collection("usuarios").doc(res.user.uid).set({ nombre: n, tipo: "vendedor" });
-        alert("Creado. Debes relogear como Socio.");
-        auth.signOut();
-    });
-}
-
-async function processOCR() {
-    const file = document.getElementById('file-input').files[0];
-    const v = document.getElementById('scan-vendedor-select').value;
-    document.getElementById('loadingOverlay').style.display = 'block';
-    try {
-        const worker = await Tesseract.createWorker();
-        await worker.loadLanguage('eng'); await worker.initialize('eng');
-        const { data: { text } } = await worker.recognize(file);
-        await worker.terminate();
-        const pinRegex = /PIN:\s*([a-zA-Z0-9]+)/g;
-        const priceRegex = /(10|25)\.00/g;
-        let pins = [], prs = [], m;
-        while((m = pinRegex.exec(text)) !== null) pins.push(m[1]);
-        while((m = priceRegex.exec(text)) !== null) prs.push(parseInt(m[1]));
-        const batch = db.batch();
-        pins.forEach((p, i) => {
-            const ref = db.collection("fichas").doc();
-            batch.set(ref, { pin: p, vendedor: v, precio: prs[i] || 25, estado: "disponible" });
-        });
-        await batch.commit(); alert("Cargadas: " + pins.length); showSection('view-admin');
-    } catch(e) { alert("Error OCR"); }
-    document.getElementById('loadingOverlay').style.display = 'none';
-}
-
-function updateAdminFinanzas() {
-    db.collection("ventas").get().then(snap => {
-        let b = 0; snap.forEach(d => b += d.data().precio);
-        let c = b * 0.15;
-        document.getElementById('finanzas-data').innerHTML = `
-            <div class="stat-box"><b>$${b}</b><small>Bruto Total</small></div>
-            <div class="stat-box" style="border-color:red"><b>$${c.toFixed(2)}</b><small>Total Comisiones</small></div>
-            <div class="stat-box" style="border-color:green"><b>$${(b-c).toFixed(2)}</b><small>Ganancia Neta</small></div>
-        `;
-    });
 }
 
 function updateVendedorStats() {
@@ -314,16 +266,9 @@ function fillVendedoresDropdown() {
         snap.forEach(doc => {
             const opt = document.createElement('option');
             opt.value = opt.text = doc.data().nombre;
-            sel.add(opt);
+            sel.appendChild(opt);
         });
     });
-}
-
-function handleLogout() { auth.signOut(); }
-function resetPassword() {
-    const e = document.getElementById('login-email').value;
-    if(!e) return alert("Escribe el correo");
-    auth.sendPasswordResetEmail(e).then(() => alert("Correo enviado"));
 }
 </script>
 </body>
